@@ -78,10 +78,13 @@ Lexer::Lexer(const std::string& filename)
     // TokenType::Is words(used as operator)
     type_table.add(TokenType::Is, "is");
     // TokenType::FuncName words
-    // notice: capitals must be added here because this is an excpetion
-    type_table.add(TokenType::FuncName, "call", "Call", "execute", "Execute");
+    type_table.add(TokenType::FuncName, "Call", "Execute", "Evaluate");
+    // TokenType::FuncResult words
+    type_table.add(TokenType::FuncResult, "result", "outcome");
     // TokenType::On words
     type_table.add(TokenType::On, "on", "with");
+    // TokenType::Of words
+    type_table.add(TokenType::Of, "of", "from");
     // TokenType::While words
     type_table.add(TokenType::While, "While");
     // TokenType::Comment words
@@ -213,7 +216,8 @@ Token Lexer::getTxt()
         case TokenType::End:         case TokenType::Article:
         case TokenType::To:          case TokenType::If:
         case TokenType::BlockBegin:  case TokenType::On:
-        case TokenType::While:
+        case TokenType::While:       case TokenType::FuncResult:
+        case TokenType::Of:
             return Token(type_table[text]);
         case TokenType::Else:
             // Else should be followed by ','
@@ -222,6 +226,8 @@ Token Lexer::getTxt()
             return Token(TokenType::Else);
         case TokenType::T_Variable:
             return makeVariable(text);
+        case TokenType::FuncName:
+            return makeFunctionCall(text);
         case TokenType::ValueOf:
             // Read "of"(hopefully?)
             readString(text);
@@ -253,8 +259,6 @@ Token Lexer::getTxt()
             if(text != "all" && text != "it")
                 return Token(TokenType::Error);
             return Token(TokenType::BlockEnd);
-        case TokenType::FuncName:
-            return makeFunctionCall(text);
         case TokenType::Comment:
             skipSentence();
             return get();

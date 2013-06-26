@@ -66,7 +66,7 @@ void Parser::readBlock(std::vector<Token>& tokens, TokenType begin)
         ++current;
         if(current->type == TokenType::BlockEnd)
             --to_find;
-        else if(current->type == TokenType::BlockBegin)// || current->type == TokenType::BlockBeginW)
+        else if(current->type == TokenType::BlockBegin)
             ++to_find;
         tokens.push_back(*current);
     }
@@ -213,7 +213,7 @@ Ast::UnaryOp* Parser::primary()
     ++current;
     switch(current->type) {
         case TokenType::String:
-            return new Ast::UnaryOp(new Ast::Literal(Variable(current->getValue<Variable::StringType>())));
+        return new Ast::UnaryOp(new Ast::Literal(Variable(current->getValue<Variable::StringType>())));
         case TokenType::Number:
             return new Ast::UnaryOp(new Ast::Literal(Variable(current->getValue<Variable::NumberType>())));
         case TokenType::Article:
@@ -222,8 +222,13 @@ Ast::UnaryOp* Parser::primary()
             return primary();
         case TokenType::Identifier:
             return new Ast::UnaryOp(new Ast::VarNode(current->getValue<std::string>(), &data_handler));
-        //case TokenType::FuncName:
-        //    return handleFunctionCall();
+        case TokenType::FuncResult:
+            skipOptional(TokenType::Of);
+            ++current;
+            if(current->type == TokenType::Identifier && current->getValue<std::string>() == "calling");
+                ++current;
+
+            return new Ast::UnaryOp(handleFunctionCall());
         case TokenType::Operator: {
             char op = current->getValue<char>();
             if(op == '(') {

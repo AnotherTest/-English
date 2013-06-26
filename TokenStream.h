@@ -23,8 +23,8 @@ enum class TokenType {
     Plus, Minus, Times, // These are only used in TokenStream
     If, Else,
     Equals, NotEquals, BlockEnd,
-    BlockBegin, Is,
-    FuncName, On,
+    BlockBegin, Is, FuncName,
+    FuncResult, On, Of,
     While, //BlockBeginW,
     WhileCondition, WhileBody,
     Comment

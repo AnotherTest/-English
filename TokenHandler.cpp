@@ -4,30 +4,36 @@
 #include <boost/lexical_cast.hpp>
 #include <iostream>
 
-void TokenHandler::setupHandlers()
+Parser::~Parser()
 {
-    handlers[TokenType::Declaration] = &TokenHandler::handle_declaration;
-    handlers[TokenType::SetVar] = &TokenHandler::handle_setvar;
-    handlers[TokenType::If] = &TokenHandler::handle_if;
-    handlers[TokenType::While] = &TokenHandler::handle_while;
-    handlers[TokenType::Identifier] = &TokenHandler::handleIdentifier;
+    delete program;
 }
 
-TokenHandler::TokenHandler(const TokenStream& tokens)
+
+void Parser::setupHandlers()
+{
+    handlers[TokenType::Declaration] = &Parser::handle_declaration;
+    handlers[TokenType::SetVar] = &Parser::handle_setvar;
+    handlers[TokenType::If] = &Parser::handle_if;
+    handlers[TokenType::While] = &Parser::handle_while;
+    handlers[TokenType::Identifier] = &Parser::handleIdentifier;
+}
+
+Parser::Parser(const TokenStream& tokens)
     : ts(tokens), current(), lexer(""), data_handler(DataHandler()), handlers(),
-      program(new Block)
+      program(new Ast::Block)
 {
     setupHandlers();
 }
 
-TokenHandler::TokenHandler(const char* filename)
+Parser::Parser(const char* filename)
     : ts(), current(), lexer(filename), data_handler(DataHandler()), handlers(),
-      program(new Block)
+      program(new Ast::Block)
 {
     setupHandlers();
 }
 
-Block* TokenHandler::run()
+Ast::Block* Parser::run()
 {
     if(ts.empty())
         ts = lexer.tokenize();
@@ -36,14 +42,20 @@ Block* TokenHandler::run()
     return program;
 }
 
-void TokenHandler::skipOptional(TokenType type)
+void Parser::skipOptional(TokenType type)
 {
     ++current;
     if(current->type != type)
         --current;
 }
 
-void TokenHandler::read_block(std::vector<Token>& tokens, TokenType begin)
+void Parser::insert(const Token& t, int offset)
+{
+    current = ts.insert(current + offset, t);
+    current -= offset;
+}
+
+void Parser::readBlock(std::vector<Token>& tokens, TokenType begin)
 {
     ++current;
     if(current->type != begin)
@@ -64,23 +76,8 @@ void TokenHandler::read_block(std::vector<Token>& tokens, TokenType begin)
     ++current;
 }
 
-void TokenHandler::insert(const Token& t, int offset)
-{
-    current = ts.insert(current + offset, t);
-    current -= offset;
-}
 
-
-void TokenHandler::insertBlock(const TokenStream& tokens)
-{
-    // Insert one by one to avoid iterator invalidation
-    for(auto it = tokens.rbegin(); it != tokens.rend(); ++it)
-        current = ts.insert(current + 1, *it);
-    current -= tokens.size();
-}
-
-
-void TokenHandler::handleUnexpectedToken()
+void Parser::handleUnexpectedToken()
 {
     error(
         "unexpected token (id " + boost::lexical_cast<std::string>(
@@ -88,7 +85,7 @@ void TokenHandler::handleUnexpectedToken()
     );
 }
 
-bool TokenHandler::handleToken() {
+bool Parser::handleToken() {
     switch(current->type) {
         case TokenType::Begin:
         case TokenType::End:
@@ -112,13 +109,13 @@ bool TokenHandler::handleToken() {
     return true;
 }
 
-void TokenHandler::handleIdentifier()
+void Parser::handleIdentifier()
 {
     program->attach(handleFunctionCall(false));
 }
 
 
-void TokenHandler::handle_declaration() {
+void Parser::handle_declaration() {
     // Assuming an article here
     ++current;
     if(current->type != TokenType::Article)
@@ -127,12 +124,12 @@ void TokenHandler::handle_declaration() {
     ++current;
     if(current->type != TokenType::Identifier)
         return error("expecting a name on declaration", current->line);
-    program->attach(new VarDeclaration(
+    program->attach(new Ast::VarDeclaration(
         current->getValue<std::string>(), &data_handler
     ));
 }
 
-void TokenHandler::handle_setvar() {
+void Parser::handle_setvar() {
     // Assuming an (optional) article here
     skipOptional(TokenType::Article);
     // Expecting an (optional) value now
@@ -148,44 +145,44 @@ void TokenHandler::handle_setvar() {
     if(current->type != TokenType::To)
         error("expecting to after the name", current->line);
     // Now we need to read an expression and set the name with it
-    program->attach(new Assignment(name, &data_handler, expression()));
+    program->attach(new Ast::Assignment(name, &data_handler, expression()));
 }
 
-void TokenHandler::handle_if() {
+void Parser::handle_if() {
     // Read the condition first
-    Condition* if_cond = condition();
+    Ast::Condition* if_cond = condition();
     // Read a block
     std::vector<Token> tokens;
-    read_block(tokens);
-    Block* if_body = TokenHandler(tokens).run();
-    Block* else_body;
+    readBlock(tokens);
+    Ast::Block* if_body = Parser(tokens).run();
+    Ast::Block* else_body;
     // Read a possible else
     if((current + 1)->type == TokenType::Else) {
         ++current;
         std::vector<Token> tokens2;
-        read_block(tokens2);
-        else_body = TokenHandler(tokens2).run();
+        readBlock(tokens2);
+        else_body = Parser(tokens2).run();
     }
     insert(Token(TokenType::Dot));
-    program->attach(new IfStatement(if_cond, if_body, else_body));
+    program->attach(new Ast::IfStatement(if_cond, if_body, else_body));
 }
 
-void TokenHandler::handle_while() {
+void Parser::handle_while() {
     // Read the condition first
-    Condition* cond = condition();
+    Ast::Condition* cond = condition();
     // Read the body tokens
     std::vector<Token> tokens;
-    read_block(tokens, TokenType::BlockBegin);
-    Block* body = TokenHandler(tokens).run();
+    readBlock(tokens, TokenType::BlockBegin);
+    Ast::Block* body = Parser(tokens).run();
     insert(Token(TokenType::Dot));
-    program->attach(new WhileStatement(cond, body));
+    program->attach(new Ast::WhileStatement(cond, body));
 }
 
-FunctionCall* TokenHandler::handleFunctionCall(bool in_expr)
+Ast::FunctionCall* Parser::handleFunctionCall(bool in_expr)
 {
     // Get the function name
     const std::string name = current->getValue<std::string>();
-    FunctionCall* call = new FunctionCall(name, &data_handler);
+    Ast::FunctionCall* call = new Ast::FunctionCall(name, &data_handler);
     if(in_expr) {
         // If we don't find a TokenType::On now, we return the result
         if((current + 1)->type != TokenType::On)
@@ -211,32 +208,32 @@ FunctionCall* TokenHandler::handleFunctionCall(bool in_expr)
 // expression handling
 // // // // // // //
 
-UnaryOp* TokenHandler::primary()
+Ast::UnaryOp* Parser::primary()
 {
     ++current;
     switch(current->type) {
         case TokenType::String:
-            return new UnaryOp(new Literal(Variable(current->getValue<Variable::StringType>())));
+            return new Ast::UnaryOp(new Ast::Literal(Variable(current->getValue<Variable::StringType>())));
         case TokenType::Number:
-            return new UnaryOp(new Literal(Variable(current->getValue<Variable::NumberType>())));
+            return new Ast::UnaryOp(new Ast::Literal(Variable(current->getValue<Variable::NumberType>())));
         case TokenType::Article:
             // We actually expect another primary now
             // because we allow an optional article before a primary
             return primary();
         case TokenType::Identifier:
-            return new UnaryOp(new VarNode(current->getValue<std::string>(), &data_handler));
+            return new Ast::UnaryOp(new Ast::VarNode(current->getValue<std::string>(), &data_handler));
         //case TokenType::FuncName:
         //    return handleFunctionCall();
         case TokenType::Operator: {
             char op = current->getValue<char>();
             if(op == '(') {
-                UnaryOp* uop = new UnaryOp(expression());
+                Ast::UnaryOp* uop = new Ast::UnaryOp(expression());
                 ++current;
                 if(current->getValue<char>() != ')')
                     error("expected ')' after '('", current->line);
                 return uop;
             } else if(op == '-')
-                return new UnaryOp(primary(), op);
+                return new Ast::UnaryOp(primary(), op);
             else
                 error("unexpected operator in primary", current->line);
         }
@@ -246,23 +243,23 @@ UnaryOp* TokenHandler::primary()
     return nullptr;
 }
 
-Expression* TokenHandler::term() {
-    UnaryOp* left = primary();
+Ast::Expression* Parser::term() {
+    Ast::UnaryOp* left = primary();
     ++current;
     if(current->type != TokenType::Operator) {
         --current;
-        return new Expression(left);
+        return new Ast::Expression(left);
     }
     const char op = current->getValue<char>();
     if(op != '*' && op != '/') {
         --current;
-        return new Expression(left);
+        return new Ast::Expression(left);
     }
-    return new Expression(left, term(), op);
+    return new Ast::Expression(left, term(), op);
 }
 
-Expression* TokenHandler::expression() {
-    Expression* left = term();
+Ast::Expression* Parser::expression() {
+    Ast::Expression* left = term();
     ++current;
     if(current->type != TokenType::Operator) {
         --current;
@@ -273,11 +270,11 @@ Expression* TokenHandler::expression() {
         --current;
         return left;
     }
-    return new Expression(left, expression(), op);
+    return new Ast::Expression(left, expression(), op);
 }
 
-Condition* TokenHandler::condition_term() {
-    Expression* left = expression();
+Ast::Condition* Parser::condition_term() {
+    Ast::Expression* left = expression();
     ++current;
     if(current->type != TokenType::Operator)
         error("expecting operator in the condition", current->line);
@@ -286,12 +283,12 @@ Condition* TokenHandler::condition_term() {
     if(op != '=' && op != '!' && op != '<' && op != '>')
         error("unsupported operator in the condition", current->line);
 
-    return new Condition(left, expression(), op);
+    return new Ast::Condition(left, expression(), op);
 }
 
-Condition* TokenHandler::condition()
+Ast::Condition* Parser::condition()
 {
-    Condition* left = condition_term();
+    Ast::Condition* left = condition_term();
     ++current;
     if(current->type != TokenType::Operator) {
         --current;
@@ -302,5 +299,5 @@ Condition* TokenHandler::condition()
         --current;
         return left;
     }
-    return new Condition(left, condition(), op);
+    return new Ast::Condition(left, condition(), op);
 }

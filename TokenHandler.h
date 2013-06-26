@@ -7,8 +7,11 @@
 #include <stack>
 #include "Ast.h"
 
-class TokenHandler {
-    typedef std::function<void(TokenHandler*)> Handler;
+/**
+ * Creates an AST from a ::TokenStream.
+ */
+class Parser {
+    typedef std::function<void(Parser*)> Handler;
     typedef std::map<TokenType, Handler> HandlerMap;
 
     TokenStream ts;
@@ -16,7 +19,7 @@ class TokenHandler {
     Lexer lexer;
     DataHandler data_handler;
     HandlerMap handlers;
-    Block* program;
+    Ast::Block* program;
 
     /**
      * Gets a ::Token from the ::TokenStream but skips one optional token of
@@ -25,17 +28,16 @@ class TokenHandler {
      */
     void skipOptional(TokenType type);
 
-    void read_block(std::vector<Token>& tokens, TokenType begin = TokenType::BlockBegin);
+    void readBlock(std::vector<Token>& tokens, TokenType begin = TokenType::BlockBegin);
 
     /**
      * Insert a ::Token before current + offset.
      */
     void insert(const Token& t, int offset = 1);
-    void insertBlock(const TokenStream& tokens);
 
     /**
-     * Handles an unexpected token in TokenHandler::handleToken.
-     * @see TokenHandler::handleToken
+     * Handles an unexpected token in Parser::handleToken.
+     * @see Parser::handleToken
      */
     void handleUnexpectedToken();
 
@@ -47,21 +49,22 @@ class TokenHandler {
     void handle_while();
     void handle_while_run();
     /**
-     * Parses the next tokens as expected for a ::FunctionCall.
+     * Parses the next tokens as expected for an Ast::FunctionCall.
      * @param in_expr determines whether this function call should be seen
      *  as a separate statement (if so, false)
      */
-    FunctionCall* handleFunctionCall(bool in_expr = true);
-    Expression* expression();
-    Expression* term();
-    UnaryOp* primary();
-    Condition* condition_term();
-    Condition* condition();
+    Ast::FunctionCall* handleFunctionCall(bool in_expr = true);
+    Ast::Expression* expression();
+    Ast::Expression* term();
+    Ast::UnaryOp* primary();
+    Ast::Condition* condition_term();
+    Ast::Condition* condition();
 
     void setupHandlers();
 public:
-    TokenHandler(const TokenStream& tokens);
-    TokenHandler(const char* filename);
-    Block* run();
+    ~Parser();
+    Parser(const TokenStream& tokens);
+    Parser(const char* filename);
+    Ast::Block* run();
 };
 #endif

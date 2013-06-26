@@ -9,9 +9,8 @@ int main (int argc, char const* argv[])
             std::cerr << "please supply filename" << std::endl;
             return 2;
         }
-        TokenHandler parser(argv[1]);
-        Block* ast = parser.run();
-        ast->execute();
+        Parser parser(argv[1]);
+        parser.run()->execute();
     } catch(const boost::bad_any_cast& e) {
         std::cerr << "Invalid value casting." << std::endl;
         return 1;

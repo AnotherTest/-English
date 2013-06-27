@@ -190,11 +190,9 @@ namespace Ast {
     class FunctionCall : public Node {
         std::string name;
         std::vector< std::unique_ptr<Expression> > args;
-        DataHandler* data;
+        DataHandler& data;
     public:
-        FunctionCall()
-            : Node(), name(), args(), data() {}
-        FunctionCall(const std::string& n, DataHandler* d)
+        FunctionCall(const std::string& n, DataHandler& d)
             : Node(), name(n), data(d) {}
 
         void addArgument(Expression* arg)
@@ -204,11 +202,15 @@ namespace Ast {
 
         Value execute()
         {
+            if(!data.funcExists(name)) {
+                throw std::runtime_error("use of nonexistant function " + name);
+                return Value();
+            }
             std::vector<Variable> vargs;
             vargs.reserve(args.size());
             for(auto& arg : args)
                 vargs.push_back(arg->execute().get<Variable>());
-            return Value(data->call(name, vargs));
+            return Value(data.call(name, vargs));
         }
     };
 
@@ -224,7 +226,7 @@ namespace Ast {
             : Node(), data(d), name(n), value(e) {}
         Value execute()
         {
-            if(data->exists(name))
+            if(data->varExists(name))
                 data->set(name, value->execute().get<Variable>());
             else
                 throw std::runtime_error("Undefined variable " + name + " used.");
@@ -243,7 +245,7 @@ namespace Ast {
             : Node(), data(d), name(n)  {}
         Value execute()
         {
-            if(!data->exists(name))
+            if(!data->varExists(name))
                 data->set(name, Variable());
             else
                 throw std::runtime_error("Variable " + name + " double declared.");
@@ -262,7 +264,7 @@ namespace Ast {
             : Node(), data(d), name(n) {}
         Value execute()
         {
-            if(data->exists(name))
+            if(data->varExists(name))
                 return Value(data->get(name));
             throw std::runtime_error("Undefined variable " + name + " used.");
         }

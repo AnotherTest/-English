@@ -4,12 +4,6 @@
 #include <boost/lexical_cast.hpp>
 #include <iostream>
 
-Parser::~Parser()
-{
-    delete program;
-}
-
-
 void Parser::setupHandlers()
 {
     handlers[TokenType::Declaration] = &Parser::handle_declaration;
@@ -19,15 +13,8 @@ void Parser::setupHandlers()
     handlers[TokenType::Identifier] = &Parser::handleIdentifier;
 }
 
-Parser::Parser(const TokenStream& tokens)
-    : ts(tokens), current(), lexer(""), data_handler(DataHandler()), handlers(),
-      program(new Ast::Block)
-{
-    setupHandlers();
-}
-
-Parser::Parser(const char* filename)
-    : ts(), current(), lexer(filename), data_handler(DataHandler()), handlers(),
+Parser::Parser(TokenStream& tokens, DataHandler& data)
+    : ts(tokens), current(), data_handler(data), handlers(),
       program(new Ast::Block)
 {
     setupHandlers();
@@ -35,10 +22,8 @@ Parser::Parser(const char* filename)
 
 Ast::Block* Parser::run()
 {
-    if(ts.empty())
-        ts = lexer.tokenize();
     current = ts.begin();
-    while(handleToken());
+    while(handleToken() && current != ts.end());
     return program;
 }
 
@@ -72,8 +57,6 @@ void Parser::readBlock(std::vector<Token>& tokens, TokenType begin)
     }
     // We read a TokenType::BlockEnd that we do not need(other ones are needed for nesting though)
     tokens.pop_back();
-    // Skip the following TokenType::Dot
-    ++current;
 }
 
 
@@ -154,14 +137,14 @@ void Parser::handle_if() {
     // Read a block
     std::vector<Token> tokens;
     readBlock(tokens);
-    Ast::Block* if_body = Parser(tokens).run();
+    Ast::Block* if_body = Parser(tokens, data_handler).run();
     Ast::Block* else_body;
     // Read a possible else
     if((current + 1)->type == TokenType::Else) {
         ++current;
         std::vector<Token> tokens2;
         readBlock(tokens2);
-        else_body = Parser(tokens2).run();
+        else_body = Parser(tokens2, data_handler).run();
     }
     insert(Token(TokenType::Dot));
     program->attach(new Ast::IfStatement(if_cond, if_body, else_body));
@@ -173,8 +156,7 @@ void Parser::handle_while() {
     // Read the body tokens
     std::vector<Token> tokens;
     readBlock(tokens, TokenType::BlockBegin);
-    Ast::Block* body = Parser(tokens).run();
-    insert(Token(TokenType::Dot));
+    Ast::Block* body = Parser(tokens, data_handler).run();
     program->attach(new Ast::WhileStatement(cond, body));
 }
 
@@ -182,7 +164,7 @@ Ast::FunctionCall* Parser::handleFunctionCall(bool in_expr)
 {
     // Get the function name
     const std::string name = current->getValue<std::string>();
-    Ast::FunctionCall* call = new Ast::FunctionCall(name, &data_handler);
+    Ast::FunctionCall* call = new Ast::FunctionCall(name, data_handler);
     if(in_expr) {
         // If we don't find a TokenType::On now, we return the result
         if((current + 1)->type != TokenType::On)
@@ -213,7 +195,7 @@ Ast::UnaryOp* Parser::primary()
     ++current;
     switch(current->type) {
         case TokenType::String:
-        return new Ast::UnaryOp(new Ast::Literal(Variable(current->getValue<Variable::StringType>())));
+            return new Ast::UnaryOp(new Ast::Literal(Variable(current->getValue<Variable::StringType>())));
         case TokenType::Number:
             return new Ast::UnaryOp(new Ast::Literal(Variable(current->getValue<Variable::NumberType>())));
         case TokenType::Article:

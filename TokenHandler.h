@@ -14,10 +14,9 @@ class Parser {
     typedef std::function<void(Parser*)> Handler;
     typedef std::map<TokenType, Handler> HandlerMap;
 
-    TokenStream ts;
+    TokenStream& ts;
     TokenStream::iterator current;
-    Lexer lexer;
-    DataHandler data_handler;
+    DataHandler& data_handler;
     HandlerMap handlers;
     Ast::Block* program;
 
@@ -62,9 +61,7 @@ class Parser {
 
     void setupHandlers();
 public:
-    ~Parser();
-    Parser(const TokenStream& tokens);
-    Parser(const char* filename);
+    Parser(TokenStream& tokens, DataHandler& data);
     Ast::Block* run();
 };
 #endif

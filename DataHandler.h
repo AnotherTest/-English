@@ -15,7 +15,8 @@ class DataHandler {
     public:
         DataHandler();
         void add(const std::string& name);
-        bool exists(const std::string& name);
+        bool varExists(const std::string& name);
+        bool funcExists(const std::string& name);
         Variable call(const std::string& name, arg_t& args);
         void set(const std::string& name, const Variable& value);
         Variable get(const std::string& name);

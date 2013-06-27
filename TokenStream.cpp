@@ -33,7 +33,6 @@ Lexer::Lexer(const std::string& filename)
     : filepath(filename), ifs(), type_table(), line(1)
 {
     ifs.exceptions(std::ifstream::eofbit);
-    open();
     // TokenType::Declaration words
     type_table.add(TokenType::Declaration,
         "Declare", "Create", "Make", "Construct", "Spawn", "Manufacture",
@@ -95,7 +94,7 @@ void Lexer::open()
 {
     ifs.open(filepath.c_str());
     if(!ifs)
-        error("could not open specified file");
+        error("could not open file \"" + filepath + "\".");
 
 }
 
@@ -300,6 +299,7 @@ Token Lexer::get()
 
 std::vector<Token> Lexer::tokenize()
 {
+    open();
     std::vector<Token> tokens;
     try {
         while(true) {

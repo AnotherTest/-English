@@ -42,6 +42,8 @@ namespace Ast {
             : type(t) {}
         virtual Value execute() = 0;
         virtual ~Node() {}
+        Node(const Node&) = delete;
+        Node& operator=(const Node&) = delete;
     };
 
     typedef std::unique_ptr<Node> NodePtr;
@@ -281,9 +283,9 @@ namespace Ast {
             : Node(), condition(c), body_if(bi), body_else(be) {}
         Value execute()
         {
-            if(body_else && condition->execute().get<bool>())
+            if(condition->execute().get<bool>())
                 body_if->execute();
-            else
+            else if(body_else)
                 body_else->execute();
             return Value();
         }

@@ -138,7 +138,8 @@ void Parser::handle_if() {
     std::vector<Token> tokens;
     readBlock(tokens);
     Ast::Block* if_body = Parser(tokens, data_handler).run();
-    Ast::Block* else_body;
+
+    Ast::Block* else_body = nullptr;
     // Read a possible else
     if((current + 1)->type == TokenType::Else) {
         ++current;
@@ -146,7 +147,7 @@ void Parser::handle_if() {
         readBlock(tokens2);
         else_body = Parser(tokens2, data_handler).run();
     }
-    insert(Token(TokenType::Dot));
+
     program->attach(new Ast::IfStatement(if_cond, if_body, else_body));
 }
 

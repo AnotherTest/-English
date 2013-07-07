@@ -31,9 +31,19 @@ DataHandler::DataHandler()
 }
 
 
-void DataHandler::add(const std::string& name)
+void DataHandler::addVar(const std::string& name)
 {
     var_table.insert(std::pair<std::string, Variable>(name, Variable()));
+}
+
+void DataHandler::addFunc(const std::string& name, const std::vector<std::string>& args)
+{
+    usr_func_table.insert(std::pair<std::string, Function>(name, Function(args)));
+}
+
+void DataHandler::delVar(const std::string& name)
+{
+    var_table.erase(name);
 }
 
 bool DataHandler::varExists(const std::string& name)
@@ -43,17 +53,41 @@ bool DataHandler::varExists(const std::string& name)
 
 bool DataHandler::funcExists(const std::string& name)
 {
-    return func_table.find(name) != func_table.end();
+    return func_table.find(name) != func_table.end()
+     || usr_func_table.find(name) != usr_func_table.end();
 }
 
 Variable DataHandler::call(const std::string& name, arg_t& args) {
-    return func_table[name](args);
+    auto it1 = func_table.find(name);
+    if(it1 != func_table.end())
+        return (*it1->second)(args);
+    auto it2 = usr_func_table.find(name);
+    if(it2 != usr_func_table.end()) {
+        std::vector<std::string>& fn_args = it2->second.getArgs();
+        for(size_t i = 0; i < fn_args.size(); ++i)
+            set(fn_args[i], args[i]);
+        Variable result = it2->second.call();
+        for(const std::string& name : fn_args)
+            delVar(name);
+        return result;
+    }
+    std::cerr << "undefined function \"" << name << "\" used" << std::endl;
+    return Variable();
 }
 
-Variable DataHandler::get(const std::string& name) {
+Variable& DataHandler::getVar(const std::string& name)
+{
     std::map<std::string, Variable>::iterator it = var_table.find(name);
-    if (it == var_table.end())
+    if(it == var_table.end())
         std::cerr << "undefined variable \"" << name << "\" used" << std::endl;
+    return it->second;
+}
+
+Function& DataHandler::getFunc(const std::string& name)
+{
+    auto it = usr_func_table.find(name);
+    if (it == usr_func_table.end())
+        std::cerr << "undefined function \"" << name << "\" used" << std::endl;
     return it->second;
 }
 

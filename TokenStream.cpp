@@ -52,8 +52,8 @@ Lexer::Lexer(const std::string& filename)
     type_table.add(TokenType::And, "and");
     // TokenType::To words
     type_table.add(TokenType::To, "to", "by", "into");
-    // TokenType::Variable words
-    type_table.add(TokenType::T_Variable, "variable");
+    // TokenType::KnownAs words
+    type_table.add(TokenType::KnownAs, "named",  "called", "labeled", "titled");
     // TokenType::End words
     type_table.add(TokenType::End, "Stop", "End", "Quit", "Exit");
     // TokenType::Plus words(not symbols)
@@ -88,6 +88,16 @@ Lexer::Lexer(const std::string& filename)
     type_table.add(TokenType::While, "While");
     // TokenType::Comment words
     type_table.add(TokenType::Comment, "Note", "Notice", "Note:", "Notice:");
+    // TokenType::Argument words
+    type_table.add(TokenType::Argument,
+        "argument", "arguments", "parameter", "parameters"
+    );
+    // TokenType::When words
+    type_table.add(TokenType::When, "When", "Whenever");
+    // TokenType::Calling words
+    type_table.add(TokenType::Calling,
+        "calling", "executing", "evaluating", "running"
+    );
 }
 
 void Lexer::open()
@@ -164,15 +174,6 @@ void Lexer::skipSentence()
     while(readChar(true) != '.');
 }
 
-
-Token Lexer::makeVariable(std::string& text)
-{
-    readString(text);
-    if(text == "named" || text == "called" || text == "labeled" || text == "titled")
-        readString(text);
-    return Token(text, TokenType::Identifier);
-}
-
 Token Lexer::makeComparison(std::string& text)
 {
     Token t(TokenType::Operator);
@@ -216,15 +217,15 @@ Token Lexer::getTxt()
         case TokenType::To:          case TokenType::If:
         case TokenType::BlockBegin:  case TokenType::On:
         case TokenType::While:       case TokenType::FuncResult:
-        case TokenType::Of:
+        case TokenType::Of:          case TokenType::Argument:
+        case TokenType::KnownAs:     case TokenType::When:
+        case TokenType::Calling:
             return Token(type_table[text]);
         case TokenType::Else:
             // Else should be followed by ','
             if(readChar() != ',')
                 return Token(TokenType::Error);
             return Token(TokenType::Else);
-        case TokenType::T_Variable:
-            return makeVariable(text);
         case TokenType::FuncName:
             return makeFunctionCall(text);
         case TokenType::ValueOf:

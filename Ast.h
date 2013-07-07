@@ -2,7 +2,9 @@
 #define _NOT_ENGLISH_AST_H_INCLUDE_GUARD
 
 #include "TokenStream.h"
+#include "DataHandler.h"
 #include <vector>
+#include <deque>
 #include <memory>
 
 namespace Ast {
@@ -32,6 +34,11 @@ namespace Ast {
                 throw std::runtime_error("type violation of Value");
             }
         }
+
+        operator bool() const
+        {
+            return !value.empty();
+        }
     };
 
     class Node {
@@ -49,12 +56,18 @@ namespace Ast {
     typedef std::unique_ptr<Node> NodePtr;
 
     class Block : public Node {
-        std::vector<NodePtr> stmnts;
+        std::deque<NodePtr> stmnts;
     public:
         Block()
             : Node() {}
 
-        template<class NodeType>
+        template <class NodeType>
+        void prepend(NodeType* n)
+        {
+            stmnts.emplace_front(n);
+        }
+
+        template <class NodeType>
         void attach(NodeType* n)
         {
             stmnts.emplace_back(n);
@@ -248,9 +261,56 @@ namespace Ast {
         Value execute()
         {
             if(!data->varExists(name))
-                data->set(name, Variable());
+                data->addVar(name);
             else
                 throw std::runtime_error("Variable " + name + " double declared.");
+            return Value();
+        }
+    };
+
+    class FuncDeclaration : public Node {
+        DataHandler* data;
+        std::string name;
+        std::vector<std::string> args;
+    public:
+        FuncDeclaration()
+            : Node(), data(nullptr), name(), args() {}
+
+        FuncDeclaration(const std::string& n, DataHandler* d)
+            : Node(), data(d), name(n), args()  {}
+
+        void addArg(const std::string& name)
+        {
+            args.push_back(name);
+        }
+
+        Value execute()
+        {
+            if(!data->funcExists(name))
+                data->addFunc(name, args);
+            else
+                throw std::runtime_error("Function " + name + " double declared.");
+            return Value();
+        }
+    };
+
+    class FuncImpl : public Node {
+        DataHandler* data;
+        std::string name;
+        Block* body;
+    public:
+        FuncImpl()
+            : Node(), data(nullptr), name(), body(nullptr) {}
+
+        FuncImpl(const std::string& n, DataHandler* d, Block* b)
+            : Node(), data(d), name(n), body(b)  {}
+
+        Value execute()
+        {
+            if(data->funcExists(name))
+                data->getFunc(name).setBody(body);
+            else
+                throw std::runtime_error("Undefined function " + name + " used.");
             return Value();
         }
     };
@@ -267,7 +327,7 @@ namespace Ast {
         Value execute()
         {
             if(data->varExists(name))
-                return Value(data->get(name));
+                return Value(data->getVar(name));
             throw std::runtime_error("Undefined variable " + name + " used.");
         }
     };

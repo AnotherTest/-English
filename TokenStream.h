@@ -17,7 +17,7 @@ enum class TokenType {
     SetVar, ValueOf,
     Error, End,
     Article, Or, And,
-    To, T_Variable,
+    To, KnownAs,
     Identifier, String,
     Number, Operator, Dot, // 14, 15, 16
     Plus, Minus, Times, // These are only used in TokenStream
@@ -27,7 +27,8 @@ enum class TokenType {
     FuncResult, On, Of,
     While, //BlockBeginW,
     WhileCondition, WhileBody,
-    Comment
+    Comment, Argument, When,
+    Calling
 };
 
 class Token {
@@ -94,11 +95,6 @@ class Lexer {
     double readNumber();
 
     void skipSentence();
-
-    /**
-     * Makes a variable ::Token.
-     */
-    Token makeVariable(std::string& text);
 
     /**
      * Makes a comparions operator ::Token.

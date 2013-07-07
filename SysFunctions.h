@@ -4,8 +4,6 @@
 #include <vector>
 #include "Variable.h"
 
-// Typedefs
-typedef std::vector<Variable> arg_t;
 namespace sys {
     Variable get_input(arg_t& args);
     Variable display(arg_t& args);

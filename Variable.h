@@ -2,7 +2,6 @@
 #define _VARIABLE_GUARD
 #include <string>
 #include <vector>
-#include <iostream>
 #include <stdexcept>
 #include "Variant.h"
 
@@ -119,5 +118,7 @@ private:
 
     boost::variant<NumberType, StringType>  value;
 };
+
+typedef std::vector<Variable> arg_t;
 
 #endif

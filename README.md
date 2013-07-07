@@ -12,7 +12,10 @@ New language features (will) include: ([X] means implemented)
 * Constants for often used values. [X]
 * Introduce "it" (and possibly "its") as a reference to the
  last-used variable.
-* User-defined functions
+* User-defined functions/subroutines [X]
+* User-defined functions take arguments by reference
+* Return statement
+* Sentences can end in "!" or "?".
 * Built-in objects and variable generalization
 * User-created libraries (using C/C++)
 * User-created libraries (using Python)
@@ -49,9 +52,29 @@ Anything starting with "Note:" or "Note" is considered a comment, eg.:
     Set the value of name to "undefined". Note that "undefined" is only
      a placeholder.
 
+Synonyms for "Note"/"Note:" include "Notice", "Notice:" and "Mind".
+
 ### Constants for often used values
 Example:
 
     Set the value of i to one.
     Dipslay i and a newline.
+
+### User-defined functions
+To use a user-defined function, you must first declare it and then define
+ it.
+
+Example:
+
+    Note: the following line is the declaration. Mind the "with" construct.
+    Create a function called Greet with argument name.
+    Notice: the next line is the implementation.
+    Upon calling Greet do:
+    Display "Hello", the name and a newline.
+    That's all.
+    Note that the next line is not a part of the definition (it's a call).
+    Greet "world".
+
+Synonyms for "When" include "Upon" and "Whenever". Synonyms for "calling"
+ include "executing", "running" and "evaluating".
 

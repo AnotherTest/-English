@@ -11,6 +11,7 @@ void Parser::setupHandlers()
     handlers[TokenType::If] = &Parser::handle_if;
     handlers[TokenType::While] = &Parser::handle_while;
     handlers[TokenType::Identifier] = &Parser::handleIdentifier;
+    handlers[TokenType::When] = &Parser::handleFuncImpl;
 }
 
 Parser::Parser(TokenStream& tokens, DataHandler& data)
@@ -97,19 +98,59 @@ void Parser::handleIdentifier()
     program->attach(handleFunctionCall(false));
 }
 
+void Parser::handleFuncImpl()
+{
+    ++current;
+    // Skip optional "calling"
+    skipOptional(TokenType::Calling);
+    // Expecting the name (id)
+    ++current;
+    if(current->type != TokenType::Identifier)
+        error("type identifier required in function impl.", current->line);
+    const std::string name = current->getValue<std::string>();
+    TokenStream tokens;
+    readBlock(tokens);
+    program->attach(new Ast::FuncImpl(
+        name, &data_handler, Parser(tokens, data_handler).run()
+    ));
+}
 
 void Parser::handle_declaration() {
-    // Assuming an article here
+    skipOptional(TokenType::Article);
+    // Expecting a type identifier (eg. "variable" or "function")
     ++current;
-    if(current->type != TokenType::Article)
-        error("article required before this variable noun", current->line);
-    // Expecting a variable now
+    if(current->type != TokenType::Identifier)
+        error("type identifier required in declaration", current->line);
+    const std::string type = current->getValue<std::string>();
+    // Skip (optional) KnownAs token (eg. "called" or "labeled")
+    skipOptional(TokenType::KnownAs);
+    // Expecting an identifier now
     ++current;
     if(current->type != TokenType::Identifier)
         return error("expecting a name on declaration", current->line);
-    program->attach(new Ast::VarDeclaration(
-        current->getValue<std::string>(), &data_handler
-    ));
+    const std::string name = current->getValue<std::string>();
+
+    if(type == "variable")
+        return program->attach(new Ast::VarDeclaration(name, &data_handler));
+    if(type == "function" || type == "subroutine" || type == "procedure") {
+// TODO (tim#1#): Fix memory leak (premature return in case of error)
+        Ast::FuncDeclaration* decl = new Ast::FuncDeclaration(name, &data_handler);
+        // Possibly read a On (With) token
+        ++current;
+        if(current->type != TokenType::On)
+            return program->attach(decl);
+        // Read "arguments"
+        ++current;
+        if(current->type != TokenType::Argument)
+            return error("expecting \"argument\" after on/with", current->line);
+        // Read the actual arguments now
+        while((++current)->type == TokenType::Identifier)
+            decl->addArg(current->getValue<std::string>());
+        --current;
+        return program->attach(decl);
+    }
+    return error("incorrect type for object in declaration", current->line);
+
 }
 
 void Parser::handle_setvar() {

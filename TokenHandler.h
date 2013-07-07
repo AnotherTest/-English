@@ -42,6 +42,7 @@ class Parser {
 
     bool handleToken();
     void handleIdentifier();
+    void handleFuncImpl();
     void handle_declaration();
     void handle_setvar();
     void handle_if();

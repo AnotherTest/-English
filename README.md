@@ -13,7 +13,7 @@ New language features (will) include: ([X] means implemented)
 * Introduce "it" (and possibly "its") as a reference to the
  last-used variable.
 * User-defined functions/subroutines [X]
-* User-defined functions take arguments by reference
+* User-defined functions take arguments by reference [X]
 * Return statement
 * Sentences can end in "!" or "?".
 * Built-in objects and variable generalization
@@ -77,4 +77,6 @@ Example:
 
 Synonyms for "When" include "Upon" and "Whenever". Synonyms for "calling"
  include "executing", "running" and "evaluating".
-
+Note also that arguments are by default passed by-reference in ~English.
+This means hat if you modify an argument, that modification is not bound to
+ the scope of the function.

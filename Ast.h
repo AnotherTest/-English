@@ -98,22 +98,22 @@ namespace Ast {
             : Node(), left(l), right(r), op(o) {}
         Value execute()
         {
-            Variable vleft = left->execute().get<Variable>();
+            VarPtr vleft = left->execute().get<VarPtr>();
             if(!right)
                 return vleft;
-            const Variable vright = right->execute().get<Variable>();
+            const VarPtr vright = right->execute().get<VarPtr>();
             switch(op) {
                 case '+':
-                    vleft.apply(AdditionVisitor(), vright);
+                    vleft->apply(AdditionVisitor(), *vright);
                     break;
                 case '-':
-                    vleft.apply(SubtractionVisitor(), vright);
+                    vleft->apply(SubtractionVisitor(), *vright);
                     break;
                 case '*':
-                    vleft.apply(MultiplicationVisitor(), vright);
+                    vleft->apply(MultiplicationVisitor(), *vright);
                     break;
                 case '/':
-                    vleft.apply(DivisionVisitor(), vright);
+                    vleft->apply(DivisionVisitor(), *vright);
                     break;
                 default:
                     throw std::runtime_error("Invalid operator " + op);
@@ -136,7 +136,7 @@ namespace Ast {
         Value execute()
         {
             if(op == '-')
-                return Value(sub->execute().get<Variable>().apply(UnaryMinusVisitor()));
+                return Value(sub->execute().get<VarPtr>()->apply(UnaryMinusVisitor()));
             else
                 return sub->execute();
         }
@@ -164,22 +164,22 @@ namespace Ast {
                 case '=':
                     return Value(Variable::apply<bool>(
                         EqualsVisitor(),
-                        vleft.get<Variable>(), vright.get<Variable>()
+                        *vleft.get<VarPtr>(), *vright.get<VarPtr>()
                     ));
                 case '!':
                     return Value(Variable::apply<bool>(
                         NotEqualsVisitor(),
-                        vleft.get<Variable>(), vright.get<Variable>()
+                        *vleft.get<VarPtr>(), *vright.get<VarPtr>()
                     ));
                 case '<':
                     return Value(Variable::apply<bool>(
                         SmallerThanVisitor(),
-                        vleft.get<Variable>(), vright.get<Variable>()
+                        *vleft.get<VarPtr>(), *vright.get<VarPtr>()
                     ));
                 case '>':
                     return Value(Variable::apply<bool>(
                         GreaterThanVisitor(),
-                        vleft.get<Variable>(), vright.get<Variable>()
+                        *vleft.get<VarPtr>(), *vright.get<VarPtr>()
                     ));
                 default:
                     throw std::runtime_error("Invalid operator " + op);
@@ -189,16 +189,16 @@ namespace Ast {
     };
 
     class Literal : public Node {
-        Value val;
+        VarPtr val;
     public:
         Literal()
             : Node(), val() {}
         template<class T>
         Literal(const T& v)
-            : Node(), val(v) {}
+            : Node(), val(new Variable(v)) {}
         Value execute()
         {
-            return val;
+            return Value(val);
         }
     };
 
@@ -221,10 +221,10 @@ namespace Ast {
                 throw std::runtime_error("use of nonexistant function " + name);
                 return Value();
             }
-            std::vector<Variable> vargs;
+            std::vector<VarPtr> vargs;
             vargs.reserve(args.size());
             for(auto& arg : args)
-                vargs.push_back(arg->execute().get<Variable>());
+                vargs.push_back(arg->execute().get<VarPtr>());
             return Value(data.call(name, vargs));
         }
     };
@@ -242,7 +242,7 @@ namespace Ast {
         Value execute()
         {
             if(data->varExists(name))
-                data->set(name, value->execute().get<Variable>());
+                data->set(name, value->execute().get<VarPtr>());
             else
                 throw std::runtime_error("Undefined variable " + name + " used.");
             return Value();

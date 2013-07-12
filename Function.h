@@ -15,7 +15,7 @@ class Function {
 public:
     Function(const std::vector<std::string>& args);
     void setBody(Ast::Block* b);
-    Variable call();
+    VarPtr call();
     std::vector<std::string>& getArgs()
     {
         return args;

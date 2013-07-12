@@ -3,6 +3,7 @@
 #include <string>
 #include <vector>
 #include <stdexcept>
+#include <memory>
 #include "Variant.h"
 
 CONDITIONAL_OPERATOR_VISITOR(EqualsVisitor, ==)
@@ -119,6 +120,7 @@ private:
     boost::variant<NumberType, StringType>  value;
 };
 
-typedef std::vector<Variable> arg_t;
+typedef std::shared_ptr<Variable> VarPtr;
+typedef std::vector<VarPtr> arg_t;
 
 #endif

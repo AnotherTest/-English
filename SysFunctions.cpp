@@ -3,42 +3,42 @@
 #include <iostream>
 
 namespace sys {
-    Variable get_input(arg_t& args)
+    VarPtr get_input(arg_t& args)
     {
         std::string line;
         std::getline(std::cin, line);
-        return Variable(line);
+        return VarPtr(new Variable(line));
     }
 
-    Variable display(arg_t& args)
+    VarPtr display(arg_t& args)
     {
         for(auto& arg : args) {
-            switch(arg.type) {
+            switch(arg->type) {
                 case Variable::Type::String:
-                    std::cout << arg.getValue<Variable::StringType>();
+                    std::cout << arg->getValue<Variable::StringType>();
                     break;
                 case Variable::Type::Number:
-                    std::cout << arg.getValue<Variable::NumberType>();
+                    std::cout << arg->getValue<Variable::NumberType>();
                     break;
                 default:
                     throw std::runtime_error("type not supported by display");
             }
         }
         std::cout.flush();
-        return Variable();
+        return VarPtr(new Variable());
     }
 
-    Variable to_number(arg_t& args)
+    VarPtr to_number(arg_t& args)
     {
-        return Variable(boost::lexical_cast<double>(
-            args[0].getValue<std::string>()
-        ));
+        return VarPtr(new Variable(boost::lexical_cast<double>(
+            args[0]->getValue<std::string>()
+        )));
     }
 
-    Variable to_string(arg_t& args)
+    VarPtr to_string(arg_t& args)
     {
-        return Variable(boost::lexical_cast<std::string>(
-            args[0].getValue<double>()
-        ));
+        return VarPtr(new Variable(boost::lexical_cast<std::string>(
+            args[0]->getValue<double>()
+        )));
     }
 }

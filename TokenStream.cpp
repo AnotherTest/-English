@@ -93,7 +93,7 @@ Lexer::Lexer(const std::string& filename)
         "argument", "arguments", "parameter", "parameters"
     );
     // TokenType::When words
-    type_table.add(TokenType::When, "When", "Whenever");
+    type_table.add(TokenType::When, "When", "Whenever", "Upon");
     // TokenType::Calling words
     type_table.add(TokenType::Calling,
         "calling", "executing", "evaluating", "running"

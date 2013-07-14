@@ -14,6 +14,5 @@ void Function::setBody(Ast::Block* b)
 
 VarPtr Function::call()
 {
-    Ast::Value temp = body->execute();
-    return temp ? temp.get<VarPtr>() : VarPtr(new Variable());
+    return body->execute();
 }

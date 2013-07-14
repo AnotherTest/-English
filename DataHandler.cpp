@@ -6,17 +6,17 @@
 DataHandler::DataHandler()
     : var_table(), func_table()
 {
-    set("newline", make_variable(std::string("\n")));
-    set("zero", make_variable(0.0));
-    set("one", make_variable(1.0));
-    set("two", make_variable(2.0));
-    set("three", make_variable(3.0));
-    set("four", make_variable(4.0));
-    set("five", make_variable(5.0));
-    set("six", make_variable(6.0));
-    set("seven", make_variable(7.0));
-    set("eight", make_variable(8.0));
-    set("nine", make_variable(9.0));
+    setRef("newline", make_variable(std::string("\n")));
+    setRef("zero", make_variable(0.0));
+    setRef("one", make_variable(1.0));
+    setRef("two", make_variable(2.0));
+    setRef("three", make_variable(3.0));
+    setRef("four", make_variable(4.0));
+    setRef("five", make_variable(5.0));
+    setRef("six", make_variable(6.0));
+    setRef("seven", make_variable(7.0));
+    setRef("eight", make_variable(8.0));
+    setRef("nine", make_variable(9.0));
     // Initialize system functions
     func_table["getInput"] = sys::get_input;
     func_table["ask"] = sys::get_input;
@@ -33,7 +33,7 @@ DataHandler::DataHandler()
 
 void DataHandler::addVar(const std::string& name)
 {
-    var_table.insert(std::make_pair(name, VarPtr(new Variable())));
+    var_table.insert(std::make_pair(name, VarPtr(new Variable)));
 }
 
 void DataHandler::addFunc(const std::string& name, const std::vector<std::string>& args)
@@ -65,14 +65,14 @@ VarPtr DataHandler::call(const std::string& name, arg_t& args) {
     if(it2 != usr_func_table.end()) {
         std::vector<std::string>& fn_args = it2->second.getArgs();
         for(size_t i = 0; i < fn_args.size(); ++i)
-            set(fn_args[i], args[i]);
+            setRef(fn_args[i], args[i]);
         VarPtr result = it2->second.call();
         for(const std::string& name : fn_args)
-            delVar(name);
+            delVar(name); // Remove arguments
         return result;
     }
     std::cerr << "undefined function \"" << name << "\" used" << std::endl;
-    return VarPtr(new Variable());
+    return VarPtr();
 }
 
 VarPtr& DataHandler::getVar(const std::string& name)
@@ -91,9 +91,14 @@ Function& DataHandler::getFunc(const std::string& name)
     return it->second;
 }
 
-void DataHandler::set(const std::string& name, const VarPtr& value)
+void DataHandler::setRef(const std::string& name, const VarPtr& value)
 {
     var_table[name] = value;
+}
+
+void DataHandler::set(const std::string& name, const VarPtr& value)
+{
+    *var_table[name] = *value;
 }
 
 #endif

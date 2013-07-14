@@ -9,45 +9,14 @@
 
 namespace Ast {
 
-    class Value {
-        boost::any value;
-    public:
-        Value()
-            : value() { }
-
-        template<class T>
-        Value(const T& v)
-            : value(v) { }
-
-        template<class T>
-        void set(const T& v)
-        {
-            value = v;
-        }
-
-        template<class T>
-        T get() const
-        {
-            try {
-                return boost::any_cast<T>(value);
-            } catch(...) {
-                throw std::runtime_error("type violation of Value");
-            }
-        }
-
-        operator bool() const
-        {
-            return !value.empty();
-        }
-    };
-
     class Node {
     protected:
         TokenType type;
     public:
         Node(const TokenType& t = TokenType::Unkown)
             : type(t) {}
-        virtual Value execute() = 0;
+        virtual VarPtr execute() = 0;
+        virtual void cleanup() {};
         virtual ~Node() {}
         Node(const Node&) = delete;
         Node& operator=(const Node&) = delete;
@@ -73,11 +42,17 @@ namespace Ast {
             stmnts.emplace_back(n);
         }
 
-        Value execute()
+        VarPtr execute()
         {
             for(auto& n : stmnts)
                 n->execute();
-            return Value();
+            return VarPtr();
+        }
+
+        void cleanup()
+        {
+            for(auto& n : stmnts)
+                n->cleanup();
         }
     };
 
@@ -96,29 +71,25 @@ namespace Ast {
         template<class NodeType1, class NodeType2>
         Expression(NodeType1* l, NodeType2* r, char o)
             : Node(), left(l), right(r), op(o) {}
-        Value execute()
+        VarPtr execute()
         {
-            VarPtr vleft = left->execute().get<VarPtr>();
+            VarPtr vleft = left->execute();
             if(!right)
                 return vleft;
-            const VarPtr vright = right->execute().get<VarPtr>();
+            const VarPtr vright = right->execute();
             switch(op) {
                 case '+':
-                    vleft->apply(AdditionVisitor(), *vright);
-                    break;
+                    return Variable::apply(AdditionVisitor(), *vleft, *vright).clone();
                 case '-':
-                    vleft->apply(SubtractionVisitor(), *vright);
-                    break;
+                    return Variable::apply(SubtractionVisitor(), *vleft, *vright).clone();
                 case '*':
-                    vleft->apply(MultiplicationVisitor(), *vright);
-                    break;
+                    return Variable::apply(MultiplicationVisitor(), *vleft, *vright).clone();
                 case '/':
-                    vleft->apply(DivisionVisitor(), *vright);
-                    break;
+                    return Variable::apply(DivisionVisitor(), *vleft, *vright).clone();
                 default:
                     throw std::runtime_error("Invalid operator " + op);
-            }
-            return Value(vleft);
+                    return VarPtr()
+;            }
         }
     };
 
@@ -133,10 +104,10 @@ namespace Ast {
         UnaryOp(NodeType* n, char o = '\0')
             : Node(), sub(n), op(o) {}
 
-        Value execute()
+        VarPtr execute()
         {
             if(op == '-')
-                return Value(sub->execute().get<VarPtr>()->apply(UnaryMinusVisitor()));
+                return Variable::apply(UnaryMinusVisitor(), *sub->execute()).clone();
             else
                 return sub->execute();
         }
@@ -152,38 +123,26 @@ namespace Ast {
         template<class NodeType1, class NodeType2>
         Condition(NodeType1* l, NodeType2* r, char o)
             : Node(), left(l), right(r), op(o) {}
-        Value execute()
+        VarPtr execute()
         {
-            Value vleft = left->execute();
-            const Value vright = right->execute();
+            VarPtr vleft = left->execute();
+            const VarPtr vright = right->execute();
             switch(op) {
                 case '&':
-                    return Value(vleft.get<bool>() && vright.get<bool>());
+                    return Variable::apply(AndVisitor(), *vleft, *vright).clone();
                 case '|':
-                    return Value(vleft.get<bool>() || vright.get<bool>());
+                    return Variable::apply(OrVisitor(), *vleft, *vright).clone();
                 case '=':
-                    return Value(Variable::apply<bool>(
-                        EqualsVisitor(),
-                        *vleft.get<VarPtr>(), *vright.get<VarPtr>()
-                    ));
+                    return Variable::apply(EqualsVisitor(), *vleft, *vright).clone();
                 case '!':
-                    return Value(Variable::apply<bool>(
-                        NotEqualsVisitor(),
-                        *vleft.get<VarPtr>(), *vright.get<VarPtr>()
-                    ));
+                    return Variable::apply(NotEqualsVisitor(), *vleft, *vright).clone();
                 case '<':
-                    return Value(Variable::apply<bool>(
-                        SmallerThanVisitor(),
-                        *vleft.get<VarPtr>(), *vright.get<VarPtr>()
-                    ));
+                    return Variable::apply(SmallerThanVisitor(), *vleft, *vright).clone();
                 case '>':
-                    return Value(Variable::apply<bool>(
-                        GreaterThanVisitor(),
-                        *vleft.get<VarPtr>(), *vright.get<VarPtr>()
-                    ));
+                    return Variable::apply(GreaterThanVisitor(), *vleft, *vright).clone();
                 default:
                     throw std::runtime_error("Invalid operator " + op);
-                    return Value();
+                    return VarPtr();
             }
         }
     };
@@ -196,9 +155,9 @@ namespace Ast {
         template<class T>
         Literal(const T& v)
             : Node(), val(new Variable(v)) {}
-        Value execute()
+        VarPtr execute()
         {
-            return Value(val);
+            return val;
         }
     };
 
@@ -215,17 +174,17 @@ namespace Ast {
             args.emplace_back(arg);
         }
 
-        Value execute()
+        VarPtr execute()
         {
             if(!data.funcExists(name)) {
                 throw std::runtime_error("use of nonexistant function " + name);
-                return Value();
+                return VarPtr();
             }
             std::vector<VarPtr> vargs;
             vargs.reserve(args.size());
             for(auto& arg : args)
-                vargs.push_back(arg->execute().get<VarPtr>());
-            return Value(data.call(name, vargs));
+                vargs.push_back(arg->execute());
+            return data.call(name, vargs);
         }
     };
 
@@ -239,13 +198,13 @@ namespace Ast {
 
         Assignment(const std::string& n, DataHandler* d, Expression* e)
             : Node(), data(d), name(n), value(e) {}
-        Value execute()
+        VarPtr execute()
         {
             if(data->varExists(name))
-                data->set(name, value->execute().get<VarPtr>());
+                data->set(name, value->execute());
             else
                 throw std::runtime_error("Undefined variable " + name + " used.");
-            return Value();
+            return VarPtr();
         }
     };
 
@@ -258,13 +217,19 @@ namespace Ast {
 
         VarDeclaration(const std::string& n, DataHandler* d)
             : Node(), data(d), name(n)  {}
-        Value execute()
+
+        VarPtr execute()
         {
             if(!data->varExists(name))
                 data->addVar(name);
             else
                 throw std::runtime_error("Variable " + name + " double declared.");
-            return Value();
+            return VarPtr();
+        }
+
+        void cleanup()
+        {
+            data->delVar(name);
         }
     };
 
@@ -284,13 +249,13 @@ namespace Ast {
             args.push_back(name);
         }
 
-        Value execute()
+        VarPtr execute()
         {
             if(!data->funcExists(name))
                 data->addFunc(name, args);
             else
                 throw std::runtime_error("Function " + name + " double declared.");
-            return Value();
+            return VarPtr();
         }
     };
 
@@ -305,13 +270,13 @@ namespace Ast {
         FuncImpl(const std::string& n, DataHandler* d, Block* b)
             : Node(), data(d), name(n), body(b)  {}
 
-        Value execute()
+        VarPtr execute()
         {
             if(data->funcExists(name))
                 data->getFunc(name).setBody(body);
             else
                 throw std::runtime_error("Undefined function " + name + " used.");
-            return Value();
+            return VarPtr();
         }
     };
 
@@ -324,10 +289,10 @@ namespace Ast {
 
         VarNode(const std::string& n, DataHandler* d)
             : Node(), data(d), name(n) {}
-        Value execute()
+        VarPtr execute()
         {
             if(data->varExists(name))
-                return Value(data->getVar(name));
+                return data->getVar(name);
             throw std::runtime_error("Undefined variable " + name + " used.");
         }
     };
@@ -341,13 +306,13 @@ namespace Ast {
             : Node(), condition(), body_if(), body_else() {}
         IfStatement(Condition* c, Block* bi, Block* be)
             : Node(), condition(c), body_if(bi), body_else(be) {}
-        Value execute()
+        VarPtr execute()
         {
-            if(condition->execute().get<bool>())
+            if(condition->execute()->getValue<Variable::BoolType>())
                 body_if->execute();
             else if(body_else)
                 body_else->execute();
-            return Value();
+            return VarPtr();
         }
     };
 
@@ -359,11 +324,11 @@ namespace Ast {
             : Node(), condition(), body() {}
         WhileStatement(Condition* c, Block* b)
             : Node(), condition(c), body(b) {}
-        Value execute()
+        VarPtr execute()
         {
-            while(condition->execute().get<bool>())
+            while(condition->execute()->getValue<Variable::BoolType>())
                 body->execute();
-            return Value();
+            return VarPtr();
         }
     };
 }

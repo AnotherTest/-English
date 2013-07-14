@@ -6,40 +6,17 @@
 #include <memory>
 #include "Variant.h"
 
-CONDITIONAL_OPERATOR_VISITOR(EqualsVisitor, ==)
-CONDITIONAL_OPERATOR_VISITOR(NotEqualsVisitor, !=)
-CONDITIONAL_OPERATOR_VISITOR(GreaterThanVisitor, >)
-CONDITIONAL_OPERATOR_VISITOR(SmallerThanVisitor, <)
-
-struct AdditionVisitor : public boost::static_visitor<> {
-    template<class T, class U>
-    void operator()(T&, const U&) const {}
-    template<class T>
-    void operator()(T& lhs, const T& rhs) const
-    {
-        lhs += rhs;
-    }
-};
-
-struct UnaryMinusVisitor : public boost::static_visitor<> {
-    template<class T>
-    void operator()(T& lhs) const {}
-    void operator()(double& d) const
-    {
-        d = -d;
-    }
-};
-
-ARITHMETIC_OPERATOR_VISITOR(SubtractionVisitor, -=)
-ARITHMETIC_OPERATOR_VISITOR(MultiplicationVisitor, *=)
-ARITHMETIC_OPERATOR_VISITOR(DivisionVisitor, /=)
+class Variable;
+typedef std::shared_ptr<Variable> VarPtr;
+typedef std::vector<VarPtr> arg_t;
 
 struct Variable {
     enum class Type {
-        Number, String, Unkown
+        Number, String, Boolean, Unkown
     };
     typedef double NumberType;
     typedef std::string StringType;
+    typedef bool BoolType;
 
     Type type;
     Variable()
@@ -76,31 +53,21 @@ struct Variable {
         boost::get<T>(value) = val;
     }
 
-    template<class T, class Visitor>
-    static T apply(const Visitor& v, const Variable& lhs, const Variable& rhs)
+    template<class Visitor>
+    static Variable apply(const Visitor& v, const Variable& lhs, const Variable& rhs)
     {
-        return T(boost::apply_visitor(v, lhs.value, rhs.value));
+        return boost::apply_visitor(v, lhs.value, rhs.value);
     }
 
-    /**
-     * Applies a binary visitor to this class. The first argument of which can
-     * be taken as a reference by the visitor's operator().
-     */
     template<class Visitor>
-    Variable& apply(const Visitor& v, const Variable& rhs)
+    static Variable apply(const Visitor& v, const Variable& var)
     {
-        boost::apply_visitor(v, value, rhs.value);
-        return *this;
+        return boost::apply_visitor(v, var.value);
     }
 
-    /**
-     * Applies a unary visitor to this class.
-     */
-    template<class Visitor>
-    Variable& apply(const Visitor& v)
+    VarPtr clone() const
     {
-        boost::apply_visitor(v, value);
-        return *this;
+        return VarPtr(new Variable(*this));
     }
 private:
     /**
@@ -113,14 +80,67 @@ private:
             return Type::Number;
         else if(typeid(var) == typeid(StringType))
             return Type::String;
-        else
+        else if(typeid(var) == typeid(BoolType))
+            return Type::Boolean;
+        else {
+            throw std::runtime_error("can't determine Variable type");
             return Type::Unkown;
+        }
     }
 
-    boost::variant<NumberType, StringType>  value;
+    boost::variant<NumberType, StringType, BoolType>  value;
 };
 
-typedef std::shared_ptr<Variable> VarPtr;
-typedef std::vector<VarPtr> arg_t;
+struct UnaryMinusVisitor : public boost::static_visitor<double> {
+    template<class T>
+    double operator()(const T& lhs) const {return .0;}
+    double operator()(const double& d) const
+    {
+        return -d;
+    }
+};
+
+OPERATOR_VISITOR(EqualsVisitor, ==, Variable,
+    VISITOR_PART(double, ==)
+    VISITOR_PART(std::string, ==)
+)
+OPERATOR_VISITOR(NotEqualsVisitor, !=, Variable,
+    VISITOR_PART(double, !=)
+    VISITOR_PART(std::string, !=)
+)
+OPERATOR_VISITOR(GreaterThanVisitor, >, Variable,
+    VISITOR_PART(double, >)
+    VISITOR_PART(std::string, >)
+)
+
+OPERATOR_VISITOR(SmallerThanVisitor, <, Variable,
+    VISITOR_PART(double, <)
+    VISITOR_PART(std::string, <)
+)
+
+OPERATOR_VISITOR(AndVisitor, &&, Variable,
+    VISITOR_PART(bool, &&)
+)
+
+OPERATOR_VISITOR(OrVisitor, ||, Variable,
+    VISITOR_PART(bool, ||)
+)
+
+OPERATOR_VISITOR(AdditionVisitor, +, Variable,
+    VISITOR_PART(double, +)
+    VISITOR_PART(std::string, +)
+)
+
+OPERATOR_VISITOR(SubtractionVisitor, -, Variable,
+    VISITOR_PART(double, -)
+)
+
+OPERATOR_VISITOR(MultiplicationVisitor, *, Variable,
+    VISITOR_PART(double, *)
+)
+
+OPERATOR_VISITOR(DivisionVisitor, /, Variable,
+    VISITOR_PART(double, /)
+)
 
 #endif

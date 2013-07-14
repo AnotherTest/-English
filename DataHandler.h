@@ -29,6 +29,7 @@ class DataHandler {
         bool varExists(const std::string& name);
         bool funcExists(const std::string& name);
         VarPtr call(const std::string& name, arg_t& args);
+        void setRef(const std::string& name, const VarPtr& value);
         void set(const std::string& name, const VarPtr& value);
         VarPtr& getVar(const std::string& name);
         Function& getFunc(const std::string& name);

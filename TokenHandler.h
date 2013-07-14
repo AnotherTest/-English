@@ -1,10 +1,10 @@
 #ifndef _TOKEN_HANDLER_GUARD
 #define _TOKEN_HANDLER_GUARD
+
 #include "TokenStream.h"
 #include "DataHandler.h"
 #include <vector>
 #include <functional>
-#include <stack>
 #include "Ast.h"
 
 /**

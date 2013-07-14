@@ -262,7 +262,7 @@ namespace Ast {
     class FuncImpl : public Node {
         DataHandler* data;
         std::string name;
-        Block* body;
+        std::unique_ptr<Block> body;
     public:
         FuncImpl()
             : Node(), data(nullptr), name(), body(nullptr) {}
@@ -273,7 +273,7 @@ namespace Ast {
         VarPtr execute()
         {
             if(data->funcExists(name))
-                data->getFunc(name).setBody(body);
+                data->getFunc(name).setBody(body.get());
             else
                 throw std::runtime_error("Undefined function " + name + " used.");
             return VarPtr();
@@ -285,7 +285,7 @@ namespace Ast {
         std::string name;
     public:
         VarNode()
-            : Node(), data(), name() {}
+            : Node(), data(nullptr), name() {}
 
         VarNode(const std::string& n, DataHandler* d)
             : Node(), data(d), name(n) {}

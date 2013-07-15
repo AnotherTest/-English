@@ -6,6 +6,7 @@
 #include <vector>
 #include <deque>
 #include <memory>
+#include <sstream>
 
 namespace Ast {
 
@@ -62,7 +63,7 @@ namespace Ast {
         char op;
     public:
         Expression()
-            : Node(), left(), right() {}
+            : Node(), left(), right(), op() {}
 
         template<class NodeType>
         Expression(NodeType* l)
@@ -87,9 +88,11 @@ namespace Ast {
                 case '/':
                     return Variable::apply(DivisionVisitor(), *vleft, *vright).clone();
                 default:
-                    throw std::runtime_error("Invalid operator " + op);
-                    return VarPtr()
-;            }
+                    std::stringstream ss("Invalid operator ");
+                    ss << op;
+                    throw std::runtime_error(ss.str().c_str());
+                    return VarPtr();
+                }
         }
     };
 
@@ -119,7 +122,7 @@ namespace Ast {
         char op;
     public:
         Condition()
-            : Node(), left(), right() {}
+            : Node(), left(), right(), op() {}
         template<class NodeType1, class NodeType2>
         Condition(NodeType1* l, NodeType2* r, char o)
             : Node(), left(l), right(r), op(o) {}
@@ -141,7 +144,9 @@ namespace Ast {
                 case '>':
                     return Variable::apply(GreaterThanVisitor(), *vleft, *vright).clone();
                 default:
-                    throw std::runtime_error("Invalid operator " + op);
+                    std::stringstream ss("Invalid operator ");
+                    ss << op;
+                    throw std::runtime_error(ss.str().c_str());
                     return VarPtr();
             }
         }
@@ -164,9 +169,9 @@ namespace Ast {
     class FunctionCall : public Node {
         std::string name;
         std::vector< std::unique_ptr<Expression> > args;
-        DataHandler& data;
+        DataHandler* data;
     public:
-        FunctionCall(const std::string& n, DataHandler& d)
+        FunctionCall(const std::string& n, DataHandler* d)
             : Node(), name(n), data(d) {}
 
         void addArgument(Expression* arg)
@@ -176,7 +181,7 @@ namespace Ast {
 
         VarPtr execute()
         {
-            if(!data.funcExists(name)) {
+            if(!data->funcExists(name)) {
                 throw std::runtime_error("use of nonexistant function " + name);
                 return VarPtr();
             }
@@ -184,7 +189,7 @@ namespace Ast {
             vargs.reserve(args.size());
             for(auto& arg : args)
                 vargs.push_back(arg->execute());
-            return data.call(name, vargs);
+            return data->call(name, vargs);
         }
     };
 

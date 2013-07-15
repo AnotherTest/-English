@@ -38,14 +38,14 @@ public:
     int line;
 
     Token()
-        : value(), type(TokenType::Unkown) { }
+        : value(), type(TokenType::Unkown), line(0) { }
 
     Token(TokenType type)
-        : value(), type(type) { }
+        : value(), type(type), line(0) { }
 
     template<class T>
     Token(const T& v, TokenType type)
-        : value(v), type(type) { }
+        : value(v), type(type), line(0) { }
 
     template<class T>
     void setValue(const T& v)

@@ -206,7 +206,7 @@ Ast::FunctionCall* Parser::handleFunctionCall(bool in_expr)
 {
     // Get the function name
     const std::string name = current->getValue<std::string>();
-    Ast::FunctionCall* call = new Ast::FunctionCall(name, data_handler);
+    Ast::FunctionCall* call = new Ast::FunctionCall(name, &data_handler);
     if(in_expr) {
         // If we don't find a TokenType::On now, we return the result
         if((current + 1)->type != TokenType::On)

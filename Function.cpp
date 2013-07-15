@@ -2,7 +2,7 @@
 #include "Ast.h"
 
 Function::Function(const std::vector<std::string>& args)
-    : args(args)
+    : args(args), body(nullptr)
 {
 
 }

@@ -16,7 +16,7 @@ void Parser::setupHandlers()
 
 Parser::Parser(TokenStream& tokens, DataHandler& data)
     : ts(tokens), current(), data_handler(data), handlers(),
-      program(new Ast::Block)
+      program(new Ast::Block(&data))
 {
     setupHandlers();
 }

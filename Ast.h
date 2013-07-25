@@ -27,9 +27,11 @@ namespace Ast {
 
     class Block : public Node {
         std::deque<NodePtr> stmnts;
+        DataHandler* data;
+        bool scope;
     public:
-        Block()
-            : Node() {}
+        Block(DataHandler* d)
+            : Node(), stmnts(), data(d), scope(false) {}
 
         template <class NodeType>
         void prepend(NodeType* n)
@@ -43,10 +45,19 @@ namespace Ast {
             stmnts.emplace_back(n);
         }
 
+        void premakeScope()
+        {
+            data->addScope();
+            scope = true;
+        } 
+
         VarPtr execute()
         {
+            if(!scope)
+                data->addScope();
             for(auto& n : stmnts)
                 n->execute();
+            cleanup(); // Execution done, cleanup
             return VarPtr();
         }
 
@@ -54,6 +65,8 @@ namespace Ast {
         {
             for(auto& n : stmnts)
                 n->cleanup();
+            data->popScope();
+            scope = false;
         }
     };
 
@@ -157,6 +170,10 @@ namespace Ast {
     public:
         Literal()
             : Node(), val() {}
+        
+        Literal(VarPtr p)
+            : Node(), val(p) {}
+
         template<class T>
         Literal(const T& v)
             : Node(), val(new Variable(v)) {}
@@ -191,6 +208,8 @@ namespace Ast {
                 vargs.push_back(arg->execute());
             return data->call(name, vargs);
         }
+
+        // Cleanup is handled by the ::DataHandler
     };
 
     class Assignment : public Node {
@@ -261,6 +280,11 @@ namespace Ast {
             else
                 throw std::runtime_error("Function " + name + " double declared.");
             return VarPtr();
+        }
+
+        void cleanup()
+        {
+            data->delFunc(name);
         }
     };
 

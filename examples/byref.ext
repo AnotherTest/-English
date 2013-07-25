@@ -1,0 +1,7 @@
+Create a function called TestFn with argument arg. Upon calling TestFn do:
+Set the value of arg to arg times 2.
+Display arg and a newline.
+That's all.
+Create a variable called test. Set the value of test to 1.
+While test is smaller than 5000 do:
+TestFn test. That's it.

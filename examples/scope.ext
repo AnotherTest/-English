@@ -1,0 +1,17 @@
+Note: the following is a test for scopes.
+Create a function TestScope with argument test.
+Upon calling TestScope do:
+Set the value of test to 0.
+That's it.
+
+Create a variable test.
+Create another variable called arg.
+Set the value of test to one.
+Set the value of arg to five.
+TestScope arg.
+TestScope arg.
+If test equals zero or arg differs from zero do:
+Display "Test failed!" and a newline.
+Stop because of the failure.
+That's it.
+Display "Test passed!" and a newline.

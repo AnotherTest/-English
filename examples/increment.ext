@@ -1,0 +1,7 @@
+Create a function Increment with argument num. Upon calling Increment do:
+Set the value of num to num plus 1. That's all.
+
+Display "Let's count to five:" and a newline.
+Create a variable called i. Set the value of i to one.
+While i is smaller than six do: Display i and a newline. Increment i.
+That's it.

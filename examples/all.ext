@@ -1,0 +1,35 @@
+Note that this is a universal language test.
+
+Make a variable error_count. Set the value of error_count to 0.
+
+Notice: variable creation tests as of this line.
+Create a variable called n. Set the value of n to 1.
+Display "EXPECTED 1: ", n and a newline.
+If n differs from one then: Set the value of error_count to error_count
+plus one. That's it.
+
+Notice: expression tests starting here.
+Set the value of n to n plus 2.
+Display "EXPECTED 3: ", n and a newline.
+If n differs from three then: Set the value of error_count to error_count
+plus one. That's all.
+
+Create a variable i. Set the value of i to zero.
+Note: error on the next line.
+While i is lower than 6 do:
+If i equals 3 then: Display "------" and a newline. That's all.
+Display "Test" and a newline.
+Set the value of i to i plus one.
+That's all.
+
+Notice: function tests starting here.
+Create a function called Greet with argument name.
+When calling Greet do:
+Display "Hello ", the name and a newline.
+That's all.
+
+Greet "world!".
+
+Display "There were ", the error_count, " errors " and a newline.
+
+Stop this program.

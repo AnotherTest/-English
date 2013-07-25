@@ -219,13 +219,8 @@ Token Lexer::getTxt()
         case TokenType::While:       case TokenType::FuncResult:
         case TokenType::Of:          case TokenType::Argument:
         case TokenType::KnownAs:     case TokenType::When:
-        case TokenType::Calling:
+        case TokenType::Calling:     case TokenType::Else:
             return Token(type_table[text]);
-        case TokenType::Else:
-            // Else should be followed by ','
-            if(readChar() != ',')
-                return Token(TokenType::Error);
-            return Token(TokenType::Else);
         case TokenType::FuncName:
             return makeFunctionCall(text);
         case TokenType::ValueOf:

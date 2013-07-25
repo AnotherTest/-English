@@ -178,12 +178,12 @@ void Parser::handle_if() {
     // Read a block
     std::vector<Token> tokens;
     readBlock(tokens);
-    Ast::Block* if_body = Parser(tokens, data_handler).run();
-
+    Ast::Block* if_body = Parser(tokens, data_handler).run(); 
     Ast::Block* else_body = nullptr;
+    std::cout << (int)(current + 1)->type << std::endl;
     // Read a possible else
-    if((current + 1)->type == TokenType::Else) {
-        ++current;
+    if((current + 2)->type == TokenType::Else) {
+        current += 2; // Skip the dot
         std::vector<Token> tokens2;
         readBlock(tokens2);
         else_body = Parser(tokens2, data_handler).run();

@@ -15,6 +15,8 @@ Ask the guess.
 While the guess differs from the number do:
     If the guess is lower than the number then:
     Display "Too low..." and a newline. That's it.
+    Otherwise do:
+    Display "Too high..." and a newline. That's all.
     Ask the guess.
 That's it.
 Display "You won!" and a newline.

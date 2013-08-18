@@ -1,0 +1,18 @@
+Create a function Decrement with argument number.
+Upon calling Decrement do: Set the value of number to number minus one.
+That's it.
+
+Display "Enter a number: ".
+Create a variable called n. Create another variable called input.
+Set input to the result of calling getInput.
+Set n to the result of executing toNumber on input. 
+If n is smaller than one then:
+Display "Don't try to fool me!" and a newline. Stop the program.
+That's all.
+Create a variable factorial. Change the value of factorial to one. 
+While n differs from 1 do:
+Change factorial to factorial times n.
+Decrement n.
+That's all.
+
+Display input, "! = ", factorial and a newline.

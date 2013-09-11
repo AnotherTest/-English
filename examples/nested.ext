@@ -1,0 +1,10 @@
+Create a function called TestNested.
+    Upon calling TestNested do:
+    Create a function called TestNestedSub.
+    Upon calling TestNestedSub do:
+    Display "TestNestedSub was callled!" and a newline.
+    That's it.
+    TestNestedSub.
+That's it.
+
+TestNested.

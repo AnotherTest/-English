@@ -136,11 +136,10 @@ void Parser::handle_declaration() {
 // TODO (tim#1#): Fix memory leak (premature return in case of error)
         Ast::FuncDeclaration* decl = new Ast::FuncDeclaration(name, &data_handler);
         // Possibly read a On (With) token
-        ++current;
-        if(current->type != TokenType::On)
+        if((current + 1)->type != TokenType::On)
             return program->attach(decl);
+        current += 2; // Skip Token::On and move to next token
         // Read "arguments"
-        ++current;
         if(current->type != TokenType::Argument)
             return error("expecting \"argument\" after on/with", current->line);
         // Read the actual arguments now
@@ -180,7 +179,6 @@ void Parser::handle_if() {
     readBlock(tokens);
     Ast::Block* if_body = Parser(tokens, data_handler).run(); 
     Ast::Block* else_body = nullptr;
-    std::cout << (int)(current + 1)->type << std::endl;
     // Read a possible else
     if((current + 2)->type == TokenType::Else) {
         current += 2; // Skip the dot
@@ -212,8 +210,12 @@ Ast::FunctionCall* Parser::handleFunctionCall(bool in_expr)
         if((current + 1)->type != TokenType::On)
             return call;
         ++current;
+    } else {
+        // If we find a TokenType::Dot, return the result
+        if((current + 1)->type == TokenType::Dot)
+            return call;
     }
-    // We found a TokenType::On, read all arguments(separated by "and")
+    // Read all arguments (separated by "and")
     while(true) {
         call->addArgument(expression());
         ++current;

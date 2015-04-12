@@ -31,6 +31,14 @@ New language features (will) include: ([X] means implemented)
 
 The source code is based upon the old source code, although it has been
  (somewhat) cleaned up.
+ 
+ To compile:
+ * Make sure to install the Boost libraries.
+ * Clone the Git repo with this ```git clone https://github.com/AnotherTest/-English ~English```
+ * Create the build folder with ```cd ~English && mkdir build && cd build```
+ * Build the Makefile with ```cmake ..```
+ * Make it with ```make```
+ * **Might be possible in the future?** Installing it system-wide with ```sudo make install```
 
 ## Overview of new features
 

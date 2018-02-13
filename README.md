@@ -5,24 +5,24 @@ This repository hosts a second, revised version of the language.
 This updated version generalizes many language concepts and introduces
  a number of new features. 
 
-New language features (will) include: ([X] means implemented)
-* New function call syntax [X]
-* Generalization of "Display" (it is now a function) [X]
-* Comments [X]
-* Constants for often used values. [X]
-* Introduce "it" (and possibly "its") as a reference to the
+New language features (will) include:
+* [X] New function call syntax
+* [X] Generalization of "Display" (it is now a function)
+* [X] Comments
+* [X] Constants for often used values.
+* [ ] Introduce "it" (and possibly "its") as a reference to the
  last-used variable.
-* User-defined functions/subroutines [X]
-* User-defined functions take arguments by reference [X]
-* Return statement
-* Sentences can end in "!" or "?".
-* Built-in objects and variable generalization
-* User-created libraries (using C/C++)
-* User-created libraries (using Python)
-* Built-ins moved to "standard" library.
-* Arrays and array library.
-* String library.
-* Socket library.
+* [X] User-defined functions/subroutines
+* [X] User-defined functions take arguments by reference
+* [ ] Return statement
+* [ ] Sentences can end in "!" or "?".
+* [ ] Built-in objects and variable generalization
+* [ ] User-created libraries (using C/C++)
+* [ ] User-created libraries (using Python)
+* [ ] Built-ins moved to "standard" library.
+* [ ] Arrays and array library.
+* [ ] String library.
+* [ ] Socket library.
 
 ## Practical information
 * Compile with -std=c++11.

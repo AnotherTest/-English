@@ -58,7 +58,7 @@ Synonyms for "Note"/"Note:" include "Notice", "Notice:" and "Mind".
 Example:
 
     Set the value of i to one.
-    Dipslay i and a newline.
+    Display i and a newline.
 
 ### User-defined functions
 To use a user-defined function, you must first declare it and then define
